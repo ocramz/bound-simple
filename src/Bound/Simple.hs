@@ -68,16 +68,23 @@
 ----------------------------------------------------------------------------
 
 
-module Bound.Simple (Bound(..), Scope, Var
-  -- * Abstraction
-  , abstract, abstract1
-  -- * Instantiation
-  , instantiate, instantiate1
-  , bindings
-  , hoistScope
-  -- * Utils
-  , Generically(..)
-  ) where
+module Bound.Simple (Bound(..)
+                    , Scope, toScope, fromScope
+                    , Var
+                    -- * Abstraction
+                    , abstract, abstract1
+                    -- * Instantiation
+                    , instantiate, instantiate1
+                    , bindings
+                    , hoistScope
+                    , closed
+                    , substitute
+                    , substituteVar
+                    -- ** Predicates
+                    , isClosed
+                    -- * Utils
+                    , Generically(..)
+                    ) where
 
 import Control.Monad (ap, liftM)
 import Control.Monad.Trans.Class (MonadTrans(..))
@@ -135,6 +142,16 @@ newtype Scope b f a = Scope { unscope :: f (Var b a) }
   deriving (Show1, Eq1) via (Generically (Scope b f))
 instance (Eq e, Functor m, Eq1 m, Eq a) => Eq (Scope e m a) where (==) = eq1
 instance (Show e, Functor m, Show1 m, Show a) => Show (Scope e m a) where showsPrec = showsPrec1
+
+-- | @'fromScope'@ is just another name for 'unscope'
+fromScope :: Scope b f a -> f (Var b a)
+fromScope = unscope
+{-# INLINE fromScope #-}
+
+-- | @'toScope'@ is just another name for 'Scope'
+toScope :: f (Var b a) -> Scope b f a
+toScope = Scope
+{-# INLINE toScope #-}
 
 class Bound t where
   -- | Perform substitution
@@ -266,3 +283,29 @@ bindings (Scope s) = foldr f [] s where
   f (B v) vs = v : vs
   f _ vs     = vs
 {-# INLINE bindings #-}
+
+-- | If a term has no free variables, you can freely change the type of
+-- free variables it is parameterized on.
+--
+-- >>> closed [12]
+-- Nothing
+--
+-- >>> closed ""
+-- Just []
+--
+-- >>> :t closed ""
+-- closed "" :: Maybe [b]
+closed :: Traversable f => f a -> Maybe (f b)
+closed = traverse (const Nothing)
+{-# INLINE closed #-}
+
+-- | A closed term has no free variables.
+--
+-- >>> isClosed []
+-- True
+--
+-- >>> isClosed [1,2,3]
+-- False
+isClosed :: Foldable f => f a -> Bool
+isClosed = all (const False)
+{-# INLINE isClosed #-}
