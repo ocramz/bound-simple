@@ -11,6 +11,7 @@ copyright:           2013 Edward Kmett, 2021 Marco Zocca
 category:            Language
 build-type:          Simple
 extra-source-files:  README.md
+changelog:           Changelog.md
 cabal-version:       >=1.10
 tested-with:         GHC == 8.10.7
 
