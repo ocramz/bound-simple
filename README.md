@@ -4,13 +4,19 @@ A lightweight implementation of 'bound'. Provides much of the functionality of B
 
 ## Example 
 
-Beta-reduce a term of the untyped lambda calculus :
+The function `whnf` beta-reduces a term of the untyped lambda calculus.
+
+In the code below, we first declare a type `Exp` for terms, using the `Scope` type within the constructor for a lambda abstraction. To this we add a few instances necessary for showing and traversing the terms. The Monad instance takes care of variable substitution.
+After that, abstraction fand aplication are implemented in terms f abstract1 and instantiate1.
+
+
 
 ```
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
 
+import Control.Monad (ap)
 import Bound.Simple (Scope, Bound(..), abstract1, instantiate1)
 import Data.Functor.Classes.Generic (Generically(..))
 

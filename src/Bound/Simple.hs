@@ -82,7 +82,7 @@ module Bound.Simple (Bound(..), Scope, Var
 import Control.Monad (ap, liftM)
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Data.Functor.Classes (Show2(..), Show1(..), showsUnaryWith, showsPrec1, liftShowsPrec2, Eq2(..), Eq1(..), eq1, liftEq, liftEq2)
--- import GHC.Generics (Generic1)
+import GHC.Generics (Generic1)
 import Data.Functor.Classes.Generic (Generically(..))
 
 -- infixl 9 :@
@@ -131,20 +131,10 @@ instance Show b => Show1 (Var b) where
 -- | @'Scope' b f a@ is an @f@ expression with bound variables in @b@,
 -- and free variables in @a@
 newtype Scope b f a = Scope { unscope :: f (Var b a) }
-
-instance (Eq e, Eq1 m, Eq a) => Eq (Scope e m a)
-    where (==) = eq1
-instance (Eq e, Eq1 m) => Eq1 (Scope e m) where
-    liftEq eq (Scope x) (Scope y) = liftEq (liftEq eq) x y
-    {-# INLINE liftEq #-}
-instance (Show e, Show1 m, Show a) => Show (Scope e m a) where
-    showsPrec = showsPrec1
-instance (Show e, Show1 m) => Show1 (Scope e m) where
-    liftShowsPrec sp sl d (Scope m) =
-        showsUnaryWith (liftShowsPrec sp' sl') "Scope" d m
-      where
-        sp' = liftShowsPrec sp sl
-        sl' = liftShowList sp sl
+  deriving (Generic1)
+  deriving (Show1, Eq1) via (Generically (Scope b f))
+instance (Eq e, Functor m, Eq1 m, Eq a) => Eq (Scope e m a) where (==) = eq1
+instance (Show e, Functor m, Show1 m, Show a) => Show (Scope e m a) where showsPrec = showsPrec1
 
 class Bound t where
   -- | Perform substitution
@@ -201,6 +191,23 @@ instance Monad f => Monad (Scope b f) where
     B b -> return (B b)
     F a -> unscope (f a)
   {-# INLINE (>>=) #-}
+
+
+-- | @'substitute' a p w@ replaces the free variable @a@ with @p@ in @w@.
+--
+-- >>> substitute "hello" ["goodnight","Gracie"] ["hello","!!!"]
+-- ["goodnight","Gracie","!!!"]
+substitute :: (Monad f, Eq a) => a -> f a -> f a -> f a
+substitute a p w = w >>= \b -> if a == b then p else return b
+{-# INLINE substitute #-}
+
+-- | @'substituteVar' a b w@ replaces a free variable @a@ with another free variable @b@ in @w@.
+--
+-- >>> substituteVar "Alice" "Bob" ["Alice","Bob","Charlie"]
+-- ["Bob","Bob","Charlie"]
+substituteVar :: (Functor f, Eq a) => a -> a -> f a -> f a
+substituteVar a p = fmap (\b -> if a == b then p else b)
+{-# INLINE substituteVar #-}
 
 -- | Capture some free variables in an expression to yield
 -- a 'Scope' with bound variables in @b@
