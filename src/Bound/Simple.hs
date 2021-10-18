@@ -23,7 +23,7 @@
 --
 -- = Example
 --
--- The 'whnf' function in this example shows how to beta-reduce a term of the untyped lambda calculus, as well as all the requisite setup needed by the library.
+-- The 'whnf' function in this example shows how to beta-reduce a term of the untyped lambda calculus.
 --
 -- Note : the Show instance of Exp depends on its Show1 instance (since Exp has one type parameter), which can be derived 'Generically' thanks to DerivingVia. This works on most recent versions of GHC (>= 8.6.1).
 --
@@ -92,10 +92,10 @@ import Data.Functor.Classes (Show2(..), Show1(..), showsUnaryWith, showsPrec1, l
 import GHC.Generics (Generic1)
 import Data.Functor.Classes.Generic (Generically(..))
 
--- infixl 9 :@
--- data Exp a = V a | Exp a :@ Exp a | Lam (Scope () Exp a)
---   deriving (Show, Functor,Foldable,Traversable, Generic1)
---   deriving (Show1) via Generically Exp
+infixl 9 :@
+data Exp a = V a | Exp a :@ Exp a | Lam (Scope () Exp a)
+  deriving (Show, Eq, Functor,Foldable,Traversable, Generic1)
+  deriving (Show1, Eq1) via Generically Exp
 
 -- instance Applicative Exp where pure = V; (<*>) = ap
 
@@ -140,6 +140,12 @@ instance Show b => Show1 (Var b) where
 newtype Scope b f a = Scope { unscope :: f (Var b a) }
   deriving (Generic1)
   deriving (Show1, Eq1) via (Generically (Scope b f))
+
+-- instance (Eq b, Eq1 f) => Eq1 (Scope b f)  where
+--   liftEq f m n = liftEq (liftEq f) (unscope m) (unscope n)
+-- instance (Show b, Show1 f) => Show1 (Scope b f) where
+--   liftShowsPrec f g d m = showParen (d > 10) $
+--     showString "Scope " . liftShowsPrec (liftShowsPrec f g) (liftShowList f g) 11 (unscope m)
 instance (Eq e, Functor m, Eq1 m, Eq a) => Eq (Scope e m a) where (==) = eq1
 instance (Show e, Functor m, Show1 m, Show a) => Show (Scope e m a) where showsPrec = showsPrec1
 
