@@ -7,11 +7,12 @@ A lightweight implementation of 'bound'. Provides much of the functionality of B
 The function `whnf` beta-reduces a term of the untyped lambda calculus.
 
 In the code below, we first declare a type `Exp` for terms, using the `Scope` type within the constructor for a lambda abstraction. To this we add a few instances necessary for showing and traversing the terms. The Monad instance takes care of variable substitution.
-After that, abstraction fand aplication are implemented in terms f abstract1 and instantiate1.
+After that, abstraction and application are implemented in terms of abstract1 and instantiate1.
+The `test` function declares a term `(\x . x) y` , then prints it and its reduced form.
 
 
 
-```
+```haskell
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
@@ -44,8 +45,8 @@ whnf (e1 :@ e2) = case whnf e1 of
   f'    -> f' :@ e2
 whnf e = e
 
-main :: IO ()
-main = do
+test :: IO ()
+test = do
   let term = lam x (V x) :@ V y
   print term         -- Lam (Scope (V (B ()))) :@ V y
   print $ whnf term  -- V y
